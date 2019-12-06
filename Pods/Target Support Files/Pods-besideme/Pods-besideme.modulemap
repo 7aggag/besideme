@@ -1,0 +1,6 @@
+framework module Pods_besideme {
+  umbrella header "Pods-besideme-umbrella.h"
+
+  export *
+  module * { export * }
+}
