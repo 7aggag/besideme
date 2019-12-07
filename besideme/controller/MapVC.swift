@@ -50,6 +50,9 @@ class MapVC: UIViewController {
         collection?.delegate=self
         collection?.backgroundColor=#colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
         pinview.addSubview(collection!)
+        
+        
+        registerForPreviewing(with: self, sourceView: collection!)
     }
     
     func adddoubletap (){
@@ -62,6 +65,8 @@ class MapVC: UIViewController {
         deleteannotions()
         removespinner()
         removelb()
+        FlikerServes.instance.imagearray=[]
+        self.collection?.reloadData()
         FlikerServes.instance.cancelallseion()
 
         
@@ -82,12 +87,13 @@ class MapVC: UIViewController {
         
         FlikerServes.instance.getimageurl(imgurl: url!) { (scuss) in
             if scuss{
-                self.progresslabel?.text = "\(FlikerServes.instance.imagearray.count)  loadeding "
+                self.progresslabel?.text = " loadeding....... "
                 FlikerServes.instance.retriveimage(complet: { (scuss) in
                     if scuss {
                         print(FlikerServes.instance.imagearray.count)
                         self.removespinner()
                         self.removelb()
+                        self.collection?.reloadData()
                     }
                 })
             }
@@ -130,6 +136,8 @@ class MapVC: UIViewController {
         UIView.animate(withDuration: 0.3) {
             self.view.layoutIfNeeded()
             FlikerServes.instance.cancelallseion()
+            FlikerServes.instance.imagearray=[]
+            self.collection?.reloadData()
 
         }
     }
@@ -207,15 +215,44 @@ extension MapVC :CLLocationManagerDelegate{
 
 extension MapVC :UICollectionViewDelegate,UICollectionViewDataSource{
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 1
+        return FlikerServes.instance.imagearray.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "collectioncell", for: indexPath) as? collectioncell
-        return cell!
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "collectioncell", for: indexPath) as? collectioncell else {return UICollectionViewCell()}
+        
+        let image = UIImageView(image: FlikerServes.instance.imagearray[indexPath.row])
+        cell.addSubview(image)
+        
+        return cell
 
     }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let popvc = storyboard?.instantiateViewController(withIdentifier: "POPVC") as? POPVC else { return }
+        popvc.imginit(forimage: FlikerServes.instance.imagearray[indexPath.row])
+        present(popvc, animated: true, completion: nil)
+    }
+}
+
+extension MapVC:UIViewControllerPreviewingDelegate{
+    func previewingContext(_ previewingContext: UIViewControllerPreviewing, viewControllerForLocation location: CGPoint) -> UIViewController? {
+        guard let indexp = collection?.indexPathForItem(at: location),let cell = collection?.cellForItem(at: indexp) else { return nil }
+        
+        guard let pop = storyboard?.instantiateViewController(withIdentifier: "POPVC") as?POPVC else {return nil}
+        
+        pop.imginit(forimage: FlikerServes.instance.imagearray[indexp.row])
+        previewingContext.sourceRect = cell.contentView.frame
+        
+        return pop
+    }
+    
+    func previewingContext(_ previewingContext: UIViewControllerPreviewing, commit viewControllerToCommit: UIViewController) {
+        
+        show(viewControllerToCommit, sender: self)
+    }
+    
     
 }
 
